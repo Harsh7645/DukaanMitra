@@ -1,0 +1,4 @@
+streamlit==1.65.0
+sarvamai==0.1.36
+pydantic==2.14.0
+tzdata==2026.5
