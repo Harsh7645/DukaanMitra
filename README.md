@@ -15,13 +15,20 @@ Open http://127.0.0.1:8501. The app reads SARVAM_API_KEY from the environment; i
 
 ## Use
 
-1. Type a Hindi, Hinglish, or English instruction, for example: `Aaj ki bikri 2500 rupaye. Ramesh ko 200 rupaye udhaar.`
-2. Select **Propose actions**. Answer any clarification by editing the full instruction and proposing again.
-3. Review the exact dates, customers, amounts, and purchase quantities. **Confirm** saves the entire batch; **Cancel** discards it.
-4. Read today's sales, customer debts, and dated purchase plans in the dashboard. A Hindi confirmation is generated from the committed actions, with a Bulbul audio player when synthesis succeeds.
-5. Alternatively, expand **Microphone input**, record up to 30 seconds with `st.audio_input`, select **Transcribe recording**, edit the Saaras transcript, then select **Propose from edited transcript**. Microphone permission is required; typed input remains available.
+1. Choose **Speak** to record up to 30 seconds, then **Transcribe recording** and edit the transcript. Or choose **Type** for Hindi, Hinglish, or English instructions.
+2. Select **Understand instruction**. Answer clarification by editing the full instruction and proposing again. Example buttons only populate input.
+3. Review **Here’s what I understood**: dates, names, amounts, quantities, and saved → proposed balances. **Confirm & save** commits the entire batch; **Cancel** discards it. Editing input disables confirmation until you generate a fresh proposal.
+4. The SQLite dashboard updates immediately after saving. The committed receipt and Hindi confirmation remain visible if speech fails; speech retry cannot save again.
 
-The expandable typed JSON example works without an API key and is useful for an offline demo. All JSON money is integer paise: ₹10 = 1000 paise. Natural-language parsing requires Sarvam.
+The **Developer / offline demo** expander contains typed JSON that works without a key. Money in JSON is integer paise: ₹10 = 1000 paise. Natural-language parsing requires Sarvam. The header distinguishes key configuration from an actual successful API response.
+
+### Shopkeeper demo scenario
+
+Try: `Aaj ki total bikri 1200 rupaye. Ramesh ko 500 rupaye udhaar aur Sita ko 250 rupaye udhaar, dono baad mein denge. Kal vendor se 20 bread packets aur 10 litre doodh lena hai.`
+
+Expected: sales set to ₹1,200; Ramesh’s debt increases by ₹500; Sita’s by ₹250; two purchase plans dated tomorrow. Purchases do not represent inventory or expenses.
+
+Adding `Vendor ko in products ke liye 400 rupaye dene hain.` requests an unsupported vendor payment. The entire mixed instruction is clarified/rejected with no partial save. Only customer debts are supported; vendor balances and payments are outside the four allowed actions.
 
 ## Data rules
 
@@ -39,6 +46,7 @@ The expandable typed JSON example works without an API key and is useful for an 
 
 ```powershell
 .\.venv\Scripts\python.exe app.py --check
+.\.venv\Scripts\python.exe test_ui.py
 ```
 
 The built-in check uses a temporary database, not the shop database. It covers validation, dashboard read-only behavior, excessive/cumulative repayments, atomic rollback, daily total replacement, normalized customer matching, duplicate and simultaneous confirmation, and rollback after an injected database failure. It also checks JSON extraction, transcription, Hindi summary generation, and audio decoding using a mocked SDK; those checks do not call live APIs.
@@ -53,6 +61,8 @@ Implementation checked against https://docs.sarvam.ai/api-reference/metaprompt a
 - Streamlit AppTest passed for typed JSON -> proposals -> Cancel/no writes -> Confirm -> dashboard, reruns, clarification, invalid actions, and speech failure/retry without duplicate writes. Tests used temporary databases.
 - The installed Sarvam SDK was exercised with offline HTTP responses for chat JSON, Saaras multipart upload, and Bulbul audio.
 - Live Bulbul v3 synthesis passed (valid 1.37-second WAV), live Saaras v4 transcribed it as a ₹100 sales instruction, and live sarvam-105b returned the expected 10000-paise sales action. An ambiguous Hindi instruction returned a clarification question. These checks did not write to the shop database.
+- Redesign checked in Chrome at 1440×1000 and 390×844: readable header/hero, stacked mobile cards, review controls, and no horizontal overflow. AppTest covers initial/empty, proposal, stale edits, cancellation, saved receipt, API-error, and speech-retry states.
+- The live mixed vendor/customer example prompted clarification with no save; the supported follow-up returned five correct actions with tomorrow’s purchase dates. Temporary-database tests confirmed ₹1,200 sales, ₹750 total credit, two plans, and duplicate protection.
 - Browser microphone permissions/capture and audible speaker playback still require a user-device check.
 - Vision was deferred to keep the hackathon focused on the requested core and voice flows.
 
